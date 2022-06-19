@@ -21,14 +21,14 @@ class MultiModal(nn.Module):
         bert_config.fusion_layer = 6
         bert_config.encoder_width = 768
         
-        self.drop = nn.Dropout(0.6)
+        # self.drop = nn.Dropout(0.6)
         
         ## print(bert_config)
         
         print('loading model', text_encoder)
 
         self.text_encoder = BertModel.from_pretrained(pretrained_model_name_or_path=text_encoder, config=bert_config, add_pooling_layer=False)
-        self.vision_linear = nn.Linear(bert_config.encoder_width, bert_config.encoder_width)
+        # self.vision_linear = nn.Linear(bert_config.encoder_width, bert_config.encoder_width)
         # self.vision_embed = self.text_encoder.embeddings
         self.cls_head = nn.Sequential(
             nn.Linear(self.text_encoder.config.hidden_size, self.text_encoder.config.hidden_size),
@@ -40,7 +40,7 @@ class MultiModal(nn.Module):
 
         if self.distill:
             self.text_encoder_m = BertModel.from_pretrained(text_encoder, config=bert_config, add_pooling_layer=False)
-            self.vision_linear_m = nn.Linear(bert_config.encoder_width, bert_config.encoder_width)
+            # self.vision_linear_m = nn.Linear(bert_config.encoder_width, bert_config.encoder_width)
             # self.vision_embed_m = self.text_encoder_m.embeddings
             self.share_cross_attention(self.text_encoder_m.encoder)
 
@@ -50,7 +50,7 @@ class MultiModal(nn.Module):
                 nn.Linear(self.text_encoder.config.hidden_size, len(CATEGORY_ID_LIST))
             )
 
-            self.model_pairs = [[self.vision_linear, self.vision_linear_m],
+            self.model_pairs = [# [self.vision_linear, self.vision_linear_m],
                                 [self.text_encoder, self.text_encoder_m],
                                 [self.cls_head, self.cls_head_m],
                                 ]
@@ -58,8 +58,8 @@ class MultiModal(nn.Module):
             self.momentum = 0.995
 
     def forward(self, input_ids, text_mask, visual_embed, visual_mask, labels=None, alpha=0, train=True):
-        visual_embed = self.vision_linear(visual_embed)
-        visual_embed = self.drop(visual_embed)
+        # visual_embed = self.vision_linear(visual_embed)
+        # visual_embed = self.drop(visual_embed)
         output = self.text_encoder(input_ids,
                                    attention_mask=text_mask,
                                    encoder_hidden_states=visual_embed,
@@ -73,11 +73,11 @@ class MultiModal(nn.Module):
             if self.distill:
                 with torch.no_grad():
                     self._momentum_update()
-                    visual_embed_m = self.vision_linear_m(visual_embed)
-                    visual_embed_m = self.drop(visual_embed_m)
+                    # visual_embed_m = self.vision_linear_m(visual_embed)
+                    # visual_embed_m = self.drop(visual_embed_m)
                     output_m = self.text_encoder_m(input_ids,
                                                    attention_mask=text_mask,
-                                                   encoder_hidden_states=visual_embed_m,
+                                                   encoder_hidden_states=visual_embed,
                                                    encoder_attention_mask=visual_mask,
                                                    return_dict=True,
                                                    )['last_hidden_state']
